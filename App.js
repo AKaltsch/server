@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
 
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
@@ -12,6 +13,7 @@ const app = express();
 const User = require("./Models/UserModel");
 
 const MONGODB_URI = process.env.MONGODB_KEY;
+const SECRET = process.env.SECRET_KEY;
 
 app.use(cors());
 app.use(express.json());
@@ -36,11 +38,19 @@ app.post("/api/register", async (req, res, next) => {
 
 app.post("/api/login", async (req, res, next) => {
   const user = await User.findOne({
-    email: req.body.emaild,
+    email: req.body.email,
     password: req.body.password,
   });
   if (user) {
-    res.json({ status: "ok", user: true });
+    const token = jwt.sign(
+      {
+        name: user.name,
+        email: user.email,
+      },
+      SECRET
+    );
+
+    res.json({ status: "ok", user: token });
   } else {
     res.json({ status: "error", user: false });
   }
