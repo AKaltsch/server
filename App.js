@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
@@ -25,10 +26,11 @@ const store = new MongoDBStore({
 
 app.post("/api/register", async (req, res, next) => {
   try {
+    const newPassword = await bcrypt.hash(req.body.password, 10);
     await User.create({
       name: req.body.name,
       email: req.body.email,
-      password: req.body.password,
+      password: newPassword,
     });
     res.json({ status: "ok" });
   } catch (err) {
@@ -39,9 +41,15 @@ app.post("/api/register", async (req, res, next) => {
 app.post("/api/login", async (req, res, next) => {
   const user = await User.findOne({
     email: req.body.email,
-    password: req.body.password,
   });
-  if (user) {
+
+  if (!user) {
+    return res.json({ status: "error", error: "Invalid Login" });
+  }
+
+  const validPassword = await bcrypt.compare(req.body.password, user.password);
+
+  if (validPassword) {
     const token = jwt.sign(
       {
         name: user.name,
