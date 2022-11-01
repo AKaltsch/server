@@ -97,6 +97,10 @@ app.post("/api/quote", async (req, res, next) => {
   }
 });
 
+app.get("*", () => {
+  // send the index.html from built folder
+});
+
 mongoose
   .connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then((result) => {
